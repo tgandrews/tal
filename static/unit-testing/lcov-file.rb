@@ -85,7 +85,7 @@ class LCOVFile
 			end
 			lineIndex += 1
 
-			if( !fileName.include? "script-tests" )
+			if( (!fileName.include? "script-tests") && (!fileName.include? "script/lib") )
 				@lcovEntries.push( lcovEntry );
 			end
 		end
@@ -121,6 +121,6 @@ class LCOVFile
 			lcovString += entry.outputToLCOV
 		end
 
-		File.open(local_filename, 'w') {|f| f.write(lcovString) }
+		File.open(pathToOutputFile, 'w') {|f| f.write(lcovString) }
 	end
 end

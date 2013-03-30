@@ -1,1 +1,5 @@
 .project
+static/chromedriver.log
+*.sublime-project
+*.sublime-workspace
+static/script-tests/prelude.js
