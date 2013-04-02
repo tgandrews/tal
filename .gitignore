@@ -3,3 +3,4 @@ static/chromedriver.log
 *.sublime-project
 *.sublime-workspace
 static/script-tests/prelude.js
+static/js-test-driver-rt.conf
