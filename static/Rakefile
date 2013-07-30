@@ -247,30 +247,37 @@ def wait_for_server
           puts "response = #{response.code}"
         end
       rescue Timeout::Error, Errno::EINVAL, Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError,
-             Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
+          Net::OpenTimeout, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
       end
     end
 end
 
 #waits for a browser to connect to the server
 def wait_for_browser
-	puts "[INFO] Waiting For Browser To Connect To JsTestDriverServer"
-	uri = URI.parse( $params[ :server ] )
+  puts "[INFO] Waiting For Browser To Connect To JsTestDriverServer"
+  uri = URI.parse($params[:server])
 
-  	while true
-    	begin
-	      	response = Net::HTTP.get_response( uri )
-	      	if( response.code == "200" )
-	        	if( !response.body().index( "Browsers: (0)" ) )
-	        		sleep( 5 );
-	        		puts "[INFO] Browser Connected"	
-	          		break;
-	        	end
-	      	end
-	    rescue Timeout::Error, Errno::EINVAL, Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError,
-        	   Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-    	end
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.open_timeout = 2
+  http.read_timeout = 3
+
+  begin
+    http.start
+    while true
+      begin
+        response = http.request_get("/")
+        if (response.code == "200")
+          if (!response.body().index("Browsers: (0)"))
+            sleep(5);
+            puts "[INFO] Browser Connected"
+            break;
+          end
+        end
+      rescue Timeout::Error
+      end
     end
+  rescue Timeout::Error
+  end
 end
 
 #used remove unwanted file from the coverage results
