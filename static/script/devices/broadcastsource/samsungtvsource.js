@@ -104,6 +104,9 @@ require.def('antie/devices/broadcastsource/samsungtvsource',
                 this.setPosition(0, 0, currentLayout.width, currentLayout.height);
             },
             /**
+             * NOTE: If a channel can not be tuned (example no signal) it seems the tuneSuccess is still fired on the
+             * first attempt, a second attempt to retune with no signal fires tuneError
+             *
              * @see http://img-developer.samsung.com/onlinedocs/samsung_webapi_guide/html/index.html
              */
             _tuneChannelByTriplet : function(params) {
@@ -126,6 +129,7 @@ require.def('antie/devices/broadcastsource/samsungtvsource',
                     var tuneSuccess = function () {
                         params.onSuccess();
                     };
+
                     var tuneError = function (error) {
                         params.onError({
                             name : "ChangeChannelError",
