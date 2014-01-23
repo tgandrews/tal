@@ -88,21 +88,21 @@ require.def('antie/widgets/carousel/spinner',
                 clonedOptions.easing = clonedOptions.easing || 'linear';
                 clonedOptions.fps = clonedOptions.fps || '25';
                 clonedOptions.skipAnim = (clonedOptions.skipAnim === undefined) ? true : clonedOptions.skipAnim;
-                clonedOptions.onComplete = this._getWrappedOnComplete(options);
+                this._wrapOnComplete(options, clonedOptions);
                 return clonedOptions;
             },
 
-            _getWrappedOnComplete: function (options) {
+            _wrapOnComplete: function (options, clonedOptions) {
                 var self;
                 self = this;
                 function wrappedComplete() {
                     self._clearAnimating();
                     if (options.onComplete && typeof options.onComplete === 'function') {
                         options.onComplete();
+                        clonedOptions.onComplete = null;
                     }
-
                 }
-                return wrappedComplete;
+                clonedOptions.onComplete = wrappedComplete;
             },
 
             _clearAnimating: function () {

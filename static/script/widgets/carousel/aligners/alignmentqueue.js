@@ -67,6 +67,7 @@ require.def('antie/widgets/carousel/aligners/alignmentqueue',
                     options.onComplete = function () {
                         if (typeof originalOnComplete === 'function') {
                             originalOnComplete();
+                            options = null;
                         }
                         self._next();
                     };

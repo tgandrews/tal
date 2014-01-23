@@ -210,11 +210,17 @@ require.def('antie/widgets/carousel/aligners/aligner',
                 function OptionsClone() {}
 
                 function unwrappedComplete() {
+                    options = null;
+                    optionsWithCallback = null;
+                    OptionsClone.prototype = null;
                     self._bubbleAfterAlign(toIndex);
                 }
 
                 function wrappedComplete() {
                     options.onComplete();
+                    options = null;
+                    optionsWithCallback = null;
+                    OptionsClone.prototype = null;
                     self._bubbleAfterAlign(toIndex);
                 }
 
