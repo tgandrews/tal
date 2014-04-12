@@ -20,7 +20,8 @@
 
     "testblock" :
         {
-            "include" : [ "script-tests/tests/devices/broadcastsource/hbbtvsourcetest.js" ]
+            "include" : [ "script-tests/tests/**/*.js" ],
+            "exclude" : [ "script-tests/tests/interactivehtml/*.js", "script-tests/tests/queuedrequire.js" ]
         },
 
     "serveblock" :
