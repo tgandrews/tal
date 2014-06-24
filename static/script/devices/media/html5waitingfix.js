@@ -34,8 +34,8 @@ require.def(
 	function (HTML5Player, MediaEvent) {
 
 		var originalConstructor = HTML5Player.prototype.init;
-		HTML5Player.prototype.init = function(id, mediaType) {
-			originalConstructor.call(this, id, mediaType);
+		HTML5Player.prototype.init = function(id, mediaType, eventHandlingFunction) {
+			originalConstructor.call(this, id, mediaType, eventHandlingFunction);
 
 			var checkWaitingTimer = null;
 			var waiting = false;
@@ -50,11 +50,11 @@ require.def(
 				}
 				checkWaitingTimer = window.setTimeout(function() {
 					waiting = true;
-					self.fireEvent(new MediaEvent("waiting"));
+					self._eventHandlingFunction(new MediaEvent("waiting"));
 				}, 500);
 				if(waiting) {
 					waiting = false;
-					self.fireEvent(new MediaEvent("playing"));
+					self._eventHandlingFunction(new MediaEvent("playing"));
 				}
 			});
 			this.addEventListener('ended', function(evt) {

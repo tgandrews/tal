@@ -59,6 +59,7 @@ require.def('antie/widgets/media',
 
                 var self = this;
                 var eventCallback = function (event) {
+                    event.target = self; // Claim events came from this widget! It's come from this media WIDGET, not the mediaController device-specific implementation
                     self.bubbleEvent(event);
                 };
 

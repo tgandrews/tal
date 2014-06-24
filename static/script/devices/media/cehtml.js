@@ -94,7 +94,7 @@ require.def(
             // Similar to src attribute or 'source' child elements:
             // attribute DOMString src;
             setSources: function(sources, tags) {
-                this._seekState = new SeekState( this );
+                this._seekState = new SeekState( this, this._eventHandlingFunction );
 
                 var currentMediaType = this._mediaElement.type;
                 var newMediaType = sources[0].getContentType();

@@ -28,14 +28,16 @@ require.def(
 	'antie/devices/media/quicktime',
 	[
 		'antie/devices/device',
-		'antie/widgets/media',
+		'antie/devices/media/mediacontroller',
 		'antie/events/mediaevent',
-		'antie/mediasource'
+		'antie/mediasource',
+        'antie/application'
 	],
-	function(Device, Media, MediaEvent, MediaSource) {
-		var QuickTimePlayer = Media.extend({
-			init: function(id, mediaType) {
-				this._super(id);
+	function(Device, MediaController, MediaEvent, MediaSource, Application) {
+		var QuickTimePlayer = MediaController.extend({
+			init: function(id, mediaType, eventHandlingFunction) {
+
+                this._eventHandlingFunction = eventHandlingFunction;
 
 				if(mediaType == "audio") {
 					this._mediaType = "audio";
@@ -51,15 +53,15 @@ require.def(
 
 				// Create the DOM element now so the wrapped functions can modify attributes
 				// before it is placed in the Document during rendering.
-				var device = this.getCurrentApplication().getDevice();
-				this._mediaElement = device._createElement("embed", this.id, this.getClasses());
+				var device = Application.getCurrentApplication().getDevice();
+				this._mediaElement = device._createElement("embed", id);
 				this._mediaElement.setAttribute("type", "video/quicktime");
 				this._mediaElement.setAttribute("pluginspace", "http://www.apple.com/qtactivex/qtplugin.cab");
 				this._mediaElement.setAttribute("EnableJavaScript", "true");
 				this._mediaElement.setAttribute("postdomevents", "true");
 				this._mediaElement.setAttribute("kioskmode", "true");
 				this._mediaElement.setAttribute("bgcolor", "#000000");
-				this._mediaElement.name = this.id;
+				this._mediaElement.name = id;
 			},
 			render: function(device) {
 				if(this.outputElement !== this._mediaElement) {
@@ -70,23 +72,23 @@ require.def(
 					var self = this;
 					function eventWrapper(evt) {
 						log(evt);
-						self.bubbleEvent(new MediaEvent(evt.type.replace(/^qt_/,''), self));
+						self._eventHandlingFunction(new MediaEvent(evt.type.replace(/^qt_/,''), self));
 					};
 					this._mediaElement.addEventListener("qt_loadedmetadata", function() {
-						self.bubbleEvent(new MediaEvent("loadedmetadata", self));
+						self._eventHandlingFunction(new MediaEvent("loadedmetadata", self));
 					}, true);
 					function timeChanged() {
-						self.bubbleEvent(new MediaEvent("timeupdate", self));
+						self._eventHandlingFunction(new MediaEvent("timeupdate", self));
 					};
 					this._mediaElement.addEventListener("qt_timechanged", timeChanged, true);
 
 					this._mediaElement.addEventListener("qt_canplay", function() {
-						self.bubbleEvent(new MediaEvent("canplay", self));
+						self._eventHandlingFunction(new MediaEvent("canplay", self));
 					}, true);
 					this._mediaElement.addEventListener("qt_play", function() {
 						self._paused = false;
-						self.bubbleEvent(new MediaEvent("play", self));
-						self.bubbleEvent(new MediaEvent("playing", self));
+						self._eventHandlingFunction(new MediaEvent("play", self));
+						self._eventHandlingFunction(new MediaEvent("playing", self));
 						if(!self._timeupdateHandle) {
 							self._timeupdateHandle = window.setInterval(timeChanged, 500);
 						}
@@ -97,13 +99,13 @@ require.def(
 							self._timeupdateHandle = null;
 						}
 						self._paused = true;
-						self.bubbleEvent(new MediaEvent("pause", self));
+						self._eventHandlingFunction(new MediaEvent("pause", self));
 					}, true);
 					this._mediaElement.addEventListener("qt_ended", function() {
-						self.bubbleEvent(new MediaEvent("ended", self));
+						self._eventHandlingFunction(new MediaEvent("ended", self));
 					}, true);
 					this._mediaElement.addEventListener("qt_stalled", function() {
-						self.bubbleEvent(new MediaEvent("stalled", self));
+						self._eventHandlingFunction(new MediaEvent("stalled", self));
 					}, true);
 				}
 
@@ -115,7 +117,7 @@ require.def(
 			},
 			// (not part of HTML5 media)
 			setWindow: function(left, top, width, height) {
-				var device = this.getCurrentApplication().getDevice();
+				var device = Application.getCurrentApplication().getDevice();
 				device.setElementSize(this._mediaElement, {width:width, height:height});
 				device.setElementPosition(this._mediaElement, {left:left, top:top});
 			},
@@ -163,7 +165,7 @@ require.def(
 			},
 			// void load();
 			load: function() {
-				var device = this.getCurrentApplication().getDevice();
+				var device = Application.getCurrentApplication().getDevice();
 				device.getLogger().warn("quicktime::load() not implemented");
 			},
 			// DOMString canPlayType(in DOMString type);
@@ -264,7 +266,7 @@ require.def(
 						this._timeupdateHandle = null;
 					}
 				} catch(ex) {
-					var device = this.getCurrentApplication().getDevice();
+					var device = Application.getCurrentApplication().getDevice();
 					device.getLogger().warn("Unable to pause:", ex);
 				}
 			},
@@ -280,31 +282,17 @@ require.def(
 			destroy: function() {
 				this.stop();
 
-				var device = this.getCurrentApplication().getDevice();
+				var device = Application.getCurrentApplication().getDevice();
 				device.removeElement(this._mediaElement);
 			}
 		});
 
-		Device.prototype.createPlayer = function(id, mediaType) {
-			return new QuickTimePlayer(id, mediaType);
+		Device.prototype.createMediaController = function(id, mediaType, eventHandlingFunction) {
+			return new QuickTimePlayer(id, mediaType, eventHandlingFunction);
 		};
 		Device.prototype.getPlayerEmbedMode = function(mediaType) {
-			return Media.EMBED_MODE_EMBEDDED;
+			return MediaController.EMBED_MODE_EMBEDDED;
 		};
 
-		/*
-			setVolume: function(volume) {
-				this._mediaElement.SetVolume(volume);
-			},
-			getVolume: function() {
-				return this._mediaElement.GetVolume();
-			},
-			setMuted: function(muted) {
-				this._mediaElement.SetMute(muted);
-			},
-			getMuted: function() {
-				return this._mediaElement.GetMute();
-			},
-		 */
 	}
 );
