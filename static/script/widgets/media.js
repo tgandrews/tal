@@ -63,9 +63,10 @@ require.def('antie/widgets/media',
                 };
 
                 this._media = Application.getCurrentApplication().getDevice().createMediaController(id, mediaType, eventCallback);
-
-
 			},
+            render: function () {
+                return this._media.render();
+            },
 			// (not part of HTML5 media)
 			setWindow: function(left, top, width, height) {
                 return this._media.setWindow(left,top,width,height);

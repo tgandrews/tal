@@ -64,8 +64,8 @@ require.def(
                 }
             },
             _createCEHTMLObjectElement: function(contentType) {
-                var device = this.getCurrentApplication().getDevice();
-                var obj = device._createElement("object", this._id, this.getClasses());
+                var device = Application.getCurrentApplication().getDevice();
+                var obj = device._createElement("object", this._id);
                 obj.setAttribute("type", contentType);
                 var div = device.createContainer();
                 div.innerHTML = '<object type="' + contentType + '" id="' + this._id + '" class="' + obj.className + '" ' + 'style="width: 100%; height: 100%; position: absolute; z-index: -1"' + ' />';
@@ -83,7 +83,7 @@ require.def(
                 if (this._mediaType === "audio") {
                     throw new Error('Unable to set window size for CE-HTML audio.');
                 }
-                var device = this.getCurrentApplication().getDevice();
+                var device = Application.getCurrentApplication().getDevice();
                 device.setElementSize(this._mediaElement, {width:width, height:height});
                 device.setElementPosition(this._mediaElement, {left:left, top:top});
             },
@@ -356,7 +356,7 @@ require.def(
         },
 
         Device.prototype.getPlayerEmbedMode = function(mediaType) {
-            return Media.EMBED_MODE_BACKGROUND;
+            return MediaController.EMBED_MODE_BACKGROUND;
         };
 
         return CEHTMLPlayer;

@@ -28,20 +28,22 @@ require.def(
     'antie/devices/media/html5',
     [
         'antie/devices/device',
-        'antie/widgets/media',
+        'antie/devices/media/mediacontroller',
         'antie/events/mediaevent',
         'antie/events/mediaerrorevent',
         'antie/events/mediasourceerrorevent',
-        'antie/mediasource'
+        'antie/mediasource',
+        'antie/application'
     ],
-    function(Device, Media, MediaEvent, MediaErrorEvent, MediaSourceErrorEvent, MediaSource) {
+    function(Device, MediaController, MediaEvent, MediaErrorEvent, MediaSourceErrorEvent, MediaSource, Application) {
         var currentPlayer = null;
         var isMuted = null;
         var currentVolume = -1;
 
-        var HTML5Player = Media.extend({
-            init: function(id, mediaType) {
-                this._super(id);
+        var HTML5Player = MediaController.extend({
+            init: function(id, mediaType, eventHandlingFunction) {
+
+                this._eventHandlingFunction = eventHandlingFunction;
 
                 if (mediaType == "audio") {
                     this._mediaType = "audio";
@@ -53,8 +55,8 @@ require.def(
 
                 // Create the DOM element now so the wrapped functions can modify attributes
                 // before it is placed in the Document during rendering.
-                var device = this.getCurrentApplication().getDevice();
-                this._mediaElement = device._createElement(this._mediaType, this.id, this.getClasses());
+                var device = Application.getCurrentApplication().getDevice();
+                this._mediaElement = device._createElement(this._mediaType, id);
 
                 if (currentVolume != -1) {
                     this._mediaElement.volume = currentVolume;
@@ -78,11 +80,11 @@ require.def(
                     // the UI widgets
                     var self = this;
                     this._eventWrapper = function(evt) {
-                        self.bubbleEvent(new MediaEvent(evt.type, self));
+                        self._eventHandlingFunction(new MediaEvent(evt.type, self));
                     };
                     this._errorEventWrapper = function(evt) {
                         var errCode = self._mediaElement.error ? self._mediaElement.error.code : Media.MEDIA_ERR_UNKNOWN;
-                        self.bubbleEvent(new MediaErrorEvent(self, errCode));
+                        self._eventHandlingFunction(new MediaErrorEvent(self, errCode));
                     };
                     for (var i = 0; i < MediaEvent.TYPES.length; i++) {
                         this._mediaElement.addEventListener(MediaEvent.TYPES[i], this._eventWrapper, true);
@@ -97,7 +99,7 @@ require.def(
                 if (this._mediaType == "audio") {
                     throw new Error('Unable to set window size for HTML5 audio.');
                 }
-                var device = this.getCurrentApplication().getDevice();
+                var device = Application.getCurrentApplication().getDevice();
                 device.setElementSize(this._mediaElement, {width:width, height:height});
                 device.setElementPosition(this._mediaElement, {left:left, top:top});
             },
@@ -115,7 +117,7 @@ require.def(
             // attribute DOMString src;
             setSources: function(sources, tags) {
                 var self = this;
-                var device = this.getCurrentApplication().getDevice();
+                var device = Application.getCurrentApplication().getDevice();
                 var oldSources = this._mediaElement.getElementsByTagName('source');
                 var supportsTypeAttribute = this._supportsTypeAttribute();
 
@@ -134,7 +136,7 @@ require.def(
                     (function(source) {
                         source._errorEventListener = function(evt) {
                             var errCode = self._mediaElement.error ? self._mediaElement.error.code : Media.MEDIA_ERR_UNKNOWN;
-                            self.bubbleEvent(new MediaSourceErrorEvent(
+                            self._eventHandlingFunction(new MediaSourceErrorEvent(
                                 self,
                                 errCode,
                                 source.src,
@@ -289,7 +291,7 @@ require.def(
             destroy: function() {
                 this.stop();
 
-                var device = this.getCurrentApplication().getDevice();
+                var device = Application.getCurrentApplication().getDevice();
                 device.removeElement(this._mediaElement);
 
                 // Remove error event listeners from each source element
@@ -330,12 +332,12 @@ require.def(
             }
         });
 
-        Device.prototype.createPlayer = function(id, mediaType) {
-            currentPlayer = new HTML5Player(id, mediaType);
+        Device.prototype.createMediaController = function(id, mediaType, eventHandlingFunction) {
+            currentPlayer = new HTML5Player(id, mediaType, eventHandlingFunction);
             return currentPlayer;
         };
         Device.prototype.getPlayerEmbedMode = function(mediaType) {
-            return Media.EMBED_MODE_EMBEDDED;
+            return MediaController.EMBED_MODE_EMBEDDED;
         };
         /**
          * Check to see if volume control is supported on this device.
