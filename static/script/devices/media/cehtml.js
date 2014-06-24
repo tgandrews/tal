@@ -28,19 +28,21 @@ require.def(
     'antie/devices/media/cehtml',
     [
         'antie/devices/device',
-        'antie/widgets/media',
+        'antie/devices/media/mediacontroller',
         'antie/events/mediaevent',
         'antie/events/mediaerrorevent',
         'antie/events/mediasourceerrorevent',
         'antie/mediasource',
-        'antie/devices/media/seekstate'
+        'antie/devices/media/seekstate',
+        'antie/application'
     ],
 
-    function(Device, Media, MediaEvent, MediaErrorEvent, MediaSourceErrorEvent, MediaSource, SeekState ) {
+    function(Device, MediaController, MediaEvent, MediaErrorEvent, MediaSourceErrorEvent, MediaSource, SeekState, Application ) {
 
-        var CEHTMLPlayer = Media.extend({
-            init: function(id, mediaType) {
-                this._super(id);
+        var CEHTMLPlayer = MediaController.extend({
+            init: function(id, mediaType, eventHandlingFunction) {
+                this._id = id;
+                this._eventHandlingFunction = eventHandlingFunction;
                 this._seekState = new SeekState( this );
 
                 this._updateInterval = null;
@@ -49,13 +51,13 @@ require.def(
 
                 // Create the DOM element now so the wrapped functions can modify attributes
                 // before it is placed in the Document during rendering.
-                this._mediaElement = this._createCEHTMLObjectElement((mediaType == "audio") ? "audio/mp4" : "video/mp4");
+                this._mediaElement = this._createCEHTMLObjectElement((mediaType === "audio") ? "audio/mp4" : "video/mp4");
                 this._mediaElement.width = 1280;
                 this._mediaElement.height = 720;
 
-                if (mediaType == "audio") {
+                if (mediaType === "audio") {
                     this._mediaType = "audio";
-                } else if (mediaType == "video") {
+                } else if (mediaType === "video") {
                     this._mediaType = "video";
                 } else {
                     throw new Error('Unrecognised media type: ' + mediaType);
@@ -63,22 +65,22 @@ require.def(
             },
             _createCEHTMLObjectElement: function(contentType) {
                 var device = this.getCurrentApplication().getDevice();
-                var obj = device._createElement("object", this.id, this.getClasses());
+                var obj = device._createElement("object", this._id, this.getClasses());
                 obj.setAttribute("type", contentType);
                 var div = device.createContainer();
-                div.innerHTML = '<object type="' + contentType + '" id="' + this.id + '" class="' + obj.className + '" ' + 'style="width: 100%; height: 100%; position: absolute; z-index: -1"' + ' />';
+                div.innerHTML = '<object type="' + contentType + '" id="' + this._id + '" class="' + obj.className + '" ' + 'style="width: 100%; height: 100%; position: absolute; z-index: -1"' + ' />';
                 return div.childNodes[0];
             },
-            render: function(device) {
-                if (this.outputElement !== this._mediaElement) {
-                    this.outputElement = this._mediaElement;
-                }
+            render: function() {
+//                if (this.outputElement !== this._mediaElement) {
+//                    this.outputElement = this._mediaElement;
+//                }
 
                 return this._mediaElement;
             },
             // (not part of HTML5 media)
             setWindow: function(left, top, width, height) {
-                if (this._mediaType == "audio") {
+                if (this._mediaType === "audio") {
                     throw new Error('Unable to set window size for CE-HTML audio.');
                 }
                 var device = this.getCurrentApplication().getDevice();
@@ -133,32 +135,32 @@ require.def(
                             case CEHTMLPlayer.PLAY_STATE_PLAYING:
                                 self._seekState.playing();
                                 if (!self._loaded) {
-                                    self.bubbleEvent(new MediaEvent("loadedmetadata", self));
-                                    self.bubbleEvent(new MediaEvent("canplaythrough", self));
+                                    self._eventHandlingFunction(new MediaEvent("loadedmetadata", self));
+                                    self._eventHandlingFunction(new MediaEvent("canplaythrough", self));
                                     self._loaded = true;
                                 }
-                                self.bubbleEvent(new MediaEvent("play", self));
-                                self.bubbleEvent(new MediaEvent("playing", self));
+                                self._eventHandlingFunction(new MediaEvent("play", self));
+                                self._eventHandlingFunction(new MediaEvent("playing", self));
                                 if (!self._updateInterval) {
                                     self._updateInterval = window.setInterval(function() {
-                                        self.bubbleEvent(new MediaEvent("timeupdate", self));
+                                        self._eventHandlingFunction(new MediaEvent("timeupdate", self));
                                     }, 900);
                                 }
                                 break;
                             case CEHTMLPlayer.PLAY_STATE_PAUSED:
-                                self.bubbleEvent(new MediaEvent("pause", self));
+                                self._eventHandlingFunction(new MediaEvent("pause", self));
                                 break;
                             case CEHTMLPlayer.PLAY_STATE_CONNECTING:
-                                self.bubbleEvent(new MediaEvent("loadstart", self));
+                                self._eventHandlingFunction(new MediaEvent("loadstart", self));
                                 break;
                             case CEHTMLPlayer.PLAY_STATE_BUFFERING:
-                                self.bubbleEvent(new MediaEvent("waiting", self));
+                                self._eventHandlingFunction(new MediaEvent("waiting", self));
                                 break;
                             case CEHTMLPlayer.PLAY_STATE_FINISHED:
-                                self.bubbleEvent(new MediaEvent("ended", self));
+                                self._eventHandlingFunction(new MediaEvent("ended", self));
                                 break;
                             case CEHTMLPlayer.PLAY_STATE_ERROR:
-                                self.bubbleEvent(new MediaErrorEvent(self, 0));
+                                self._eventHandlingFunction(new MediaErrorEvent(self, 0));
                                 break;
                             default:
                                 // do nothing
@@ -168,7 +170,7 @@ require.def(
 
                     this._eventsBound = true;
                 }
-                this.bubbleEvent(new MediaEvent("canplay", this));
+                this._eventHandlingFunction(new MediaEvent("canplay", this));
             },
             getSources: function() {
                 return [new MediaSource(this._mediaElement.data, this._mediaElement.type)];
@@ -329,7 +331,7 @@ require.def(
             destroy: function() {
                 this.stop();
 
-                var device = this.getCurrentApplication().getDevice();
+                var device = Application.getCurrentApplication().getDevice();
                 device.removeElement(this._mediaElement);
             },
             _requiresMediaTypeFix : function() {
@@ -346,9 +348,13 @@ require.def(
         CEHTMLPlayer.PLAY_STATE_FINISHED = 5;
         CEHTMLPlayer.PLAY_STATE_ERROR = 6;
 
-        Device.prototype.createPlayer = function(id, mediaType) {
-            return new CEHTMLPlayer(id, mediaType);
-        };
+//        Device.prototype.createPlayer = function(id, mediaType) {
+//            return new CEHTMLPlayer(id, mediaType);
+//        };
+        Device.prototype.createMediaController = function(id, mediaType, eventHandlingFunction) {
+            return new CEHTMLPlayer(id, mediaType, eventHandlingFunction);
+        },
+
         Device.prototype.getPlayerEmbedMode = function(mediaType) {
             return Media.EMBED_MODE_BACKGROUND;
         };

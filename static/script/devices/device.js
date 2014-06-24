@@ -530,8 +530,9 @@ require.def('antie/devices/device',
              * @param {String} mediaType "video" or "radio".
              * @returns A player element.
              */
-            createPlayer: function(id, mediaType) {
-            },
+// FIXME: THIS IS WHAT WE'RE TRYING TO GET RID OF, REMOVE IT.
+//            createPlayer: function(id, mediaType) {
+//            },
             /**
              * Gets the player embed mode for the current device
              * @param {String} mediaType "video" or "radio".
@@ -731,7 +732,13 @@ require.def('antie/devices/device',
              */
             isBroadcastSourceSupported: function() {
             	return false;
+            },
+
+
+            createMediaController: function (id, mediaType, eventHandlingFunction) {
+                throw new Error("Need to override this with mixing from device media modifiers!");
             }
+
         });
         /**
          * Loads a device configuration document from the given URL.
