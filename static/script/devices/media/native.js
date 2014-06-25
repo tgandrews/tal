@@ -28,11 +28,11 @@ require.def(
 	'antie/devices/media/native',
 	[
 		'antie/devices/device',
-		'antie/widgets/media'
+		'antie/devices/media/mediacontroller'
 	],
-	function(Device, Media) {
+	function(Device, MediaController) {
 		Device.prototype.getPlayerEmbedMode = function(mediaType) {
-			return Media.EMBED_MODE_EXTERNAL;
+			return MediaController.EMBED_MODE_EXTERNAL;
 		};
 	}
 );
