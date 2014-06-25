@@ -35,13 +35,21 @@ require.def(
         'antie/mediasource',
         'antie/devices/media/seekstate'
     ],
-
     function(Class, Device, MediaEvent, MediaErrorEvent, MediaSourceErrorEvent, MediaSource, SeekState ) {
 
         var Controller = Class.extend({
             init: function(id, mediaType, eventHandlingFunction) {
             },
             render: function(device) {
+                throw new Error("Should be overridden in subclasses");
+            },
+            show: function(options) {
+                throw new Error("Should be overridden in subclasses");
+            },
+            hide: function(options) {
+                throw new Error("Should be overridden in subclasses");
+            },
+            moveTo: function(options) {
                 throw new Error("Should be overridden in subclasses");
             },
             setWindow: function(left, top, width, height) {
