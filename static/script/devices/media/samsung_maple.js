@@ -28,7 +28,7 @@ require.def(
     'antie/devices/media/samsung_maple',
     [
         'antie/devices/device',
-        'antie/devices/media//mediaController',
+        'antie/devices/media//mediacontroller',
         'antie/events/mediaevent',
         'antie/events/mediaerrorevent',
         'antie/events/mediasourceerrorevent',
